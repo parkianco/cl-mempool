@@ -1,0 +1,36 @@
+# ASDF/Lisp compiled files
+*.fasl
+*.fas
+*.lib
+*.o
+*.lx64fsl
+*.dx64fsl
+*.wx64fsl
+*.ufsl
+
+# SBCL
+*.core
+
+# Editor backups
+*~
+\#*\#
+.\#*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# SLIME
+.slime/
+
+# Build artifacts
+build/
+dist/
+
+# Local config
+local.lisp

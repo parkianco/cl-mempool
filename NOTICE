@@ -1,0 +1,20 @@
+cl-mempool
+==========
+
+Standalone transaction mempool library extracted from CLPIC
+(Common Lisp P2P Intellectual Property Chain)
+
+Original Source: https://github.com/clpic/clpic
+Extracted Module: src/mempool/
+
+This is a pure Common Lisp implementation with zero external dependencies.
+The code is derived from CLPIC's transaction pool implementation, adapted
+for standalone use.
+
+Features derived from:
+- src/mempool/v2/ - Pool V2 architecture, EIP-1559/4844 support
+- src/mempool/pending/ - Pending pool with nonce tracking
+- src/mempool/relay-policy.lisp - RBF and relay policies
+
+Copyright (c) 2025 CLPIC Contributors
+Licensed under the MIT License
