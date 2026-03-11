@@ -9,7 +9,7 @@
 
 (asdf:defsystem #:cl-mempool
   :description "Standalone transaction mempool with fee-based priority and eviction policies"
-  :author "CLPIC Contributors"
+  :author "Parkian Company LLC"
   :license "MIT"
   :version "0.1.0"
   :serial t

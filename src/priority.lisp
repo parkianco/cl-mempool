@@ -1,3 +1,6 @@
+;;;; Copyright (c) 2024-2026 Parkian Company LLC. All rights reserved.
+;;;; SPDX-License-Identifier: BSD-3-Clause
+
 ;;;; src/priority.lisp - Priority Queue Implementation
 ;;;;
 ;;;; Binary heap-based priority queue for transaction ordering

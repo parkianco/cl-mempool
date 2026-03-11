@@ -1,3 +1,6 @@
+;;;; Copyright (c) 2024-2026 Parkian Company LLC. All rights reserved.
+;;;; SPDX-License-Identifier: BSD-3-Clause
+
 ;;;; src/pool.lisp - Main Mempool Implementation
 ;;;;
 ;;;; Thread-safe transaction mempool with priority ordering and eviction
