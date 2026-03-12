@@ -175,41 +175,45 @@
       (let* ((account (%get-account pool sender))
              (pending-nonce (account-state-pending-nonce account)))
 
-        ;; Check for past nonce before RBF
+        ;; Check for past nonce, but allow RBF replacement of the
+        ;; highest pending nonce (pending-nonce - 1)
         (when (< (tx-nonce tx) pending-nonce)
-          (error 'mempool-nonce-error
-                 :expected pending-nonce
-                 :got (tx-nonce tx)))
+          ;; Check if this is an RBF candidate (same sender, same nonce,
+          ;; and it's the highest pending nonce)
+          (let ((existing (when (= (tx-nonce tx) (1- pending-nonce))
+                           (find-if (lambda (ptx)
+                                      (and (bytes= (tx-sender ptx) sender)
+                                           (= (tx-nonce ptx) (tx-nonce tx))))
+                                    (account-state-pending-txs account)))))
+            (if existing
+                (if (rbf-allowed-p tx existing evict-config)
+                    (progn
+                      ;; Replace existing transaction: reset pending-nonce so
+                      ;; the replacement can be re-added at the same nonce slot
+                      (%mempool-remove-unlocked pool existing)
+                      (setf (account-state-pending-nonce account) (tx-nonce tx)))
+                    (error 'mempool-underpriced-error
+                           :required (rbf-minimum-price existing evict-config)))
+                (error 'mempool-nonce-error
+                       :expected pending-nonce
+                       :got (tx-nonce tx)))))
 
-        ;; Check for RBF replacement
-        (let ((existing (find-if (lambda (ptx)
-                                   (and (bytes= (tx-sender ptx) sender)
-                                        (= (tx-nonce ptx) (tx-nonce tx))))
-                                 (account-state-pending-txs account))))
-          (when existing
-            (if (rbf-allowed-p tx existing evict-config)
-                (progn
-                  ;; Replace existing transaction
-                  (%mempool-remove-unlocked pool existing)
-                  (setf existing nil))
-                (error 'mempool-underpriced-error
-                       :required (rbf-minimum-price existing evict-config)))))
+        ;; Add to appropriate queue (use live pending-nonce, may have changed via RBF)
+        (let ((current-pending-nonce (account-state-pending-nonce account)))
+          (cond
+            ;; Executable: nonce matches expected
+            ((= (tx-nonce tx) current-pending-nonce)
+             (push tx (account-state-pending-txs account))
+             (%add-to-priority-heap pool tx)
+             (incf (mempool-pending-count pool))
+             (incf (account-state-pending-nonce account))
+             ;; Try to promote queued txs
+             (%promote-queued pool account))
 
-        ;; Add to appropriate queue
-        (cond
-          ;; Executable: nonce matches expected
-          ((= (tx-nonce tx) pending-nonce)
-           (push tx (account-state-pending-txs account))
-           (%add-to-priority-heap pool tx)
-           (incf (mempool-pending-count pool))
-           (incf (account-state-pending-nonce account))
-           ;; Try to promote queued txs
-           (%promote-queued pool account))
-
-          ;; Future nonce: queue it
-          ((> (tx-nonce tx) pending-nonce)
-           (push tx (account-state-queued-txs account))
-           (incf (mempool-queued-count pool))))
+            ;; Future nonce: queue it
+            ((> (tx-nonce tx) current-pending-nonce)
+             (push tx (account-state-queued-txs account))
+             (incf (mempool-queued-count pool)))))
 
         ;; Update storage
         (setf (gethash hash (mempool-tx-by-hash pool)) tx)
@@ -288,7 +292,17 @@
   (with-lock ((mempool-lock pool))
     (let ((tx (heap-pop (mempool-priority-heap pool))))
       (when tx
-        (mempool-remove pool tx)
+        ;; Clean up account state and storage without touching the heap
+        ;; (heap-pop already removed it from the heap)
+        (let* ((sender (tx-sender tx))
+               (account (gethash sender (mempool-accounts pool))))
+          (when account
+            (when (member tx (account-state-pending-txs account) :test #'eq)
+              (setf (account-state-pending-txs account)
+                    (remove tx (account-state-pending-txs account) :test #'eq))
+              (decf (mempool-pending-count pool)))))
+        (remhash (tx-hash tx) (mempool-tx-by-hash pool))
+        (decf (mempool-total-bytes pool) (tx-size tx))
         tx))))
 
 (defun mempool-get-executable (pool &key (limit 1000))
