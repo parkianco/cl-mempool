@@ -1,0 +1,9 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  ci:
+    uses: parkianco/.github/.github/workflows/cl-ci.yml@main

@@ -34,4 +34,6 @@
     :components
     ((:file "test-mempool"))))
   :perform (test-op (op c)
-             (uiop:symbol-call :cl-mempool.test :run-tests)))
+             (let ((result (uiop:symbol-call :cl-mempool.test :run-tests)))
+               (unless result
+                 (error "Tests failed")))))
