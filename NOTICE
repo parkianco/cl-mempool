@@ -4,7 +4,6 @@ cl-mempool
 Standalone transaction mempool library extracted from CLPIC
 (Common Lisp P2P Intellectual Property Chain)
 
-Original Source: https://github.com/clpic/clpic
 Extracted Module: src/mempool/
 
 This is a pure Common Lisp implementation with zero external dependencies.
