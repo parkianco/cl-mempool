@@ -175,6 +175,12 @@
       (let* ((account (%get-account pool sender))
              (pending-nonce (account-state-pending-nonce account)))
 
+        ;; Check for past nonce before RBF
+        (when (< (tx-nonce tx) pending-nonce)
+          (error 'mempool-nonce-error
+                 :expected pending-nonce
+                 :got (tx-nonce tx)))
+
         ;; Check for RBF replacement
         (let ((existing (find-if (lambda (ptx)
                                    (and (bytes= (tx-sender ptx) sender)
@@ -203,13 +209,7 @@
           ;; Future nonce: queue it
           ((> (tx-nonce tx) pending-nonce)
            (push tx (account-state-queued-txs account))
-           (incf (mempool-queued-count pool)))
-
-          ;; Past nonce: invalid
-          (t
-           (error 'mempool-nonce-error
-                  :expected pending-nonce
-                  :got (tx-nonce tx))))
+           (incf (mempool-queued-count pool))))
 
         ;; Update storage
         (setf (gethash hash (mempool-tx-by-hash pool)) tx)
