@@ -1,3 +1,6 @@
+;; Copyright (c) 2024-2026 Parkian Company LLC. All rights reserved.
+;; SPDX-License-Identifier: BSD-3-Clause
+
 ;;;; cl-mempool.asd - ASDF System Definition
 ;;;;
 ;;;; Standalone transaction mempool management library
@@ -23,7 +26,7 @@
      (:file "priority")
      (:file "eviction")
      (:file "pool"))))
-  :in-order-to ((test-op (test-op #:cl-mempool/test))))
+  :in-order-to ((asdf:test-op (test-op #:cl-mempool/test))))
 
 (asdf:defsystem #:cl-mempool/test
   :description "Tests for cl-mempool"
@@ -33,7 +36,7 @@
   ((:module "test"
     :components
     ((:file "test-mempool"))))
-  :perform (test-op (op c)
+  :perform (asdf:test-op (op c)
              (let ((result (uiop:symbol-call :cl-mempool.test :run-tests)))
                (unless result
                  (error "Tests failed")))))
